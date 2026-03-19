@@ -1,196 +1,196 @@
-# AI Skills Manager 功能文档
+# AI Skills Manager
 
-## 概述
+## Overview
 
-AI Skills Manager 是 ai-manager 桌面应用的核心功能模块，用于统一管理当前电脑上所有 AI 编码工具的 Skills。支持 Windows、macOS、Linux 三平台。
+AI Skills Manager is the core module of the ai-manager desktop application. It provides unified management of Skills across all AI coding tools installed on the current machine, with support for Windows, macOS, and Linux.
 
-## 技术栈
+## Tech Stack
 
-- **前端**: React 19 + TypeScript + Tailwind CSS 4 + Vite 7
-- **后端**: Tauri v2 (Rust)
-- **路由**: react-router-dom (Hash Router)
-- **状态管理**: Zustand
-- **Markdown 渲染**: react-markdown + remark-gfm + remark-frontmatter
-- **图标**: lucide-react
+- **Frontend**: React 19 + TypeScript + Tailwind CSS 4 + Vite 7
+- **Backend**: Tauri v2 (Rust)
+- **Routing**: react-router-dom (Hash Router)
+- **State management**: Zustand
+- **Markdown rendering**: react-markdown + remark-gfm + remark-frontmatter
+- **Icons**: lucide-react
 
-## 支持的 AI 工具
+## Supported AI Tools
 
-### 有 Skills 系统的工具
+### Tools with Skills Support
 
-| 工具 | 配置目录 | Skills 目录 | 配置文件 |
-|------|---------|------------|---------|
+| Tool | Config Directory | Skills Directory | Config Files |
+|------|-----------------|-----------------|--------------|
 | Claude Code | `~/.claude/` | `skills/` | `settings.json`, `CLAUDE.md` |
 | Codex (OpenAI) | `~/.codex/` | `skills/.system/` | `config.toml`, `AGENTS.md` |
 | Google Gemini | `~/.gemini/` | `skills/` | `settings.json`, `GEMINI.md` |
 | GitHub Copilot | `~/.copilot/` | `skills/` | - |
 
-### 仅有配置的工具
+### Config-Only Tools
 
-| 工具 | 配置目录 | 主要配置 |
-|------|---------|---------|
-| Cursor | 平台相关 (见跨平台章节) | IDE 配置 |
+| Tool | Config Directory | Main Config |
+|------|-----------------|-------------|
+| Cursor | Platform-specific (see cross-platform section) | IDE config |
 | CodeBuddy | `~/.codebuddy/` | `mcp.json`, `argv.json` |
-| CodeGeex | `~/.codegeex/` | agent 配置 |
+| CodeGeex | `~/.codegeex/` | agent config |
 | MarsCode | `~/.marscode/` | `config.json` |
 | Lingma | `~/.lingma/` | `lingma_mcp.json` |
 | Kiro | `~/.kiro/` | settings |
 | Gongfeng Copilot | `~/.gongfeng_copilot/` | `config.json` |
-| CodingCopilot | `~/.codingCopilot/` | MCP 配置 |
+| CodingCopilot | `~/.codingCopilot/` | MCP config |
 
-### 共享 Skills Hub
+### Shared Skills Hub
 
-位置: `~/.agents/skills/`
+Location: `~/.agents/skills/`
 
-多个工具通过 symlink 共用此中心仓库中的 skills。
+Multiple tools share skills from this central repository via symlinks.
 
-## Skill 文件格式
+## Skill File Format
 
 ```
 skills/skill-name/
-├── SKILL.md          # YAML frontmatter + Markdown 正文
-├── references/       # 可选参考文件
-├── agents/           # 可选 agent 配置 (如 openai.yaml)
-├── scripts/          # 可选脚本
+├── SKILL.md          # YAML frontmatter + Markdown body
+├── references/       # Optional reference files
+├── agents/           # Optional agent configs (e.g. openai.yaml)
+├── scripts/          # Optional scripts
 └── LICENSE.txt
 ```
 
-### SKILL.md 格式
+### SKILL.md Format
 
 ```markdown
 ---
 name: skill-name
-description: 技能描述
+description: Skill description
 allowed-tools: Bash(tool:*), Read, Write
 ---
 
-# Skill 内容
-Markdown 格式的指令和文档...
+# Skill Content
+Instructions and documentation in Markdown...
 ```
 
-## 跨平台支持
+## Cross-Platform Support
 
-### 路径解析
+### Path Resolution
 
-大部分工具以用户 home 目录为基准，三平台一致 (`~/.claude/`, `~/.codex/` 等)。Rust 端使用 `dirs::home_dir()` 获取 home 目录，`std::path::PathBuf` 拼接路径。
+Most tools resolve paths relative to the user's home directory, consistently across all three platforms (`~/.claude/`, `~/.codex/`, etc.). The Rust side uses `dirs::home_dir()` to obtain the home directory and `std::path::PathBuf` for path joining.
 
-### Cursor 特殊路径
+### Cursor Platform-Specific Paths
 
-| 平台 | 路径 |
-|------|------|
+| Platform | Path |
+|----------|------|
 | Windows | `%APPDATA%\Cursor\` |
 | macOS | `~/Library/Application Support/Cursor/` |
 | Linux | `~/.config/Cursor/` |
 
-### Symlink 处理
+### Symlink Handling
 
-| 平台 | API | 权限要求 |
-|------|-----|---------|
-| Linux/macOS | `std::os::unix::fs::symlink()` | 无 |
-| Windows | `std::os::windows::fs::symlink_dir()` | 开发者模式或管理员权限 |
+| Platform | API | Permission Requirement |
+|----------|-----|-----------------------|
+| Linux/macOS | `std::os::unix::fs::symlink()` | None |
+| Windows | `std::os::windows::fs::symlink_dir()` | Developer Mode or administrator |
 
-使用条件编译 `#[cfg(unix)]` / `#[cfg(windows)]` 处理差异。
+Use conditional compilation `#[cfg(unix)]` / `#[cfg(windows)]` to handle platform differences.
 
-## 项目结构
+## Project Structure
 
-### 前端
+### Frontend
 
 ```
 src/
-├── main.tsx                         # Hash Router 入口
-├── App.tsx                          # AppShell 布局 (Sidebar + Outlet)
+├── main.tsx                         # Hash Router entry point
+├── App.tsx                          # AppShell layout (Sidebar + Outlet)
 ├── types/
-│   ├── index.ts                     # 公共类型
-│   └── skills.ts                    # Skills 模块类型 (AiTool, Skill, SkillContent)
+│   ├── index.ts                     # Shared types
+│   └── skills.ts                    # Skills module types (AiTool, Skill, SkillContent)
 ├── store/
 │   └── useSkillsStore.ts            # Zustand store (tools, hubSkills)
 ├── api/
-│   └── skills.ts                    # Tauri invoke() 封装 (8 个 API)
+│   └── skills.ts                    # Tauri invoke() wrappers (8 APIs)
 ├── hooks/
-│   ├── useAiTools.ts                # 获取 AI 工具列表
-│   ├── useSkills.ts                 # 获取指定工具的 skills
-│   └── useSkillContent.ts           # 获取 skill 完整内容
+│   ├── useAiTools.ts                # Fetch AI tool list
+│   ├── useSkills.ts                 # Fetch skills for a given tool
+│   └── useSkillContent.ts           # Fetch full skill content
 ├── components/
 │   ├── layout/
-│   │   └── Sidebar.tsx              # 侧边栏 (模块导航 + 子导航)
-│   ├── ui/                          # 通用 UI 组件
-│   │   ├── Badge.tsx                # 标签 (5 种变体)
-│   │   ├── StatusDot.tsx            # 状态指示点
-│   │   ├── EmptyState.tsx           # 空状态占位
-│   │   ├── LoadingSpinner.tsx       # 加载中
-│   │   ├── MarkdownViewer.tsx       # Markdown 渲染器
-│   │   └── SearchInput.tsx          # 搜索输入框
-│   └── skills/                      # Skills 模块组件
-│       ├── ToolCard.tsx             # 工具卡片
-│       ├── SkillCard.tsx            # Skill 卡片
-│       ├── SkillActions.tsx         # Skill 操作 (禁用/移除)
-│       ├── InstallDialog.tsx        # 安装到工具弹窗
-│       └── ConfigViewer.tsx         # 配置文件查看器
+│   │   └── Sidebar.tsx              # Sidebar (module nav + sub-nav)
+│   ├── ui/                          # Generic UI components
+│   │   ├── Badge.tsx                # Badge (5 variants)
+│   │   ├── StatusDot.tsx            # Status indicator dot
+│   │   ├── EmptyState.tsx           # Empty state placeholder
+│   │   ├── LoadingSpinner.tsx       # Loading indicator
+│   │   ├── MarkdownViewer.tsx       # Markdown renderer
+│   │   └── SearchInput.tsx          # Search input
+│   └── skills/                      # Skills module components
+│       ├── ToolCard.tsx             # Tool card
+│       ├── SkillCard.tsx            # Skill card
+│       ├── SkillActions.tsx         # Skill actions (disable/remove)
+│       ├── InstallDialog.tsx        # Install-to-tool dialog
+│       └── ConfigViewer.tsx         # Config file viewer
 └── pages/
-    ├── Home.tsx                     # 全局首页 (功能模块入口)
-    ├── Settings.tsx                 # 全局设置
-    └── skills/                      # Skills 模块页面
-        ├── SkillsDashboard.tsx      # 工具概览 (卡片网格, 按能力分组)
-        ├── ToolDetailPage.tsx       # 工具详情 (Skills 列表 + Config)
-        ├── SkillDetailPage.tsx      # Skill 详情 (Markdown 渲染 + 元数据)
-        └── HubPage.tsx             # 共享 Skills Hub (安装管理)
+    ├── Home.tsx                     # Global home (module entry)
+    ├── Settings.tsx                 # Global settings
+    └── skills/                      # Skills module pages
+        ├── SkillsDashboard.tsx      # Tool overview (card grid, grouped by capability)
+        ├── ToolDetailPage.tsx       # Tool detail (skills list + config)
+        ├── SkillDetailPage.tsx      # Skill detail (Markdown rendering + metadata)
+        └── HubPage.tsx             # Shared Skills Hub (install management)
 ```
 
-### Rust 后端
+### Rust Backend
 
 ```
 src-tauri/src/
-├── main.rs              # 应用入口
-├── lib.rs               # Tauri Builder, 注册所有 commands
-└── skills/              # Skills 模块
-    ├── mod.rs           # 模块导出
-    ├── commands.rs      # 8 个 Tauri command 函数
-    ├── models.rs        # 数据结构 (AiToolInfo, SkillInfo, SkillContent 等)
-    ├── registry.rs      # 工具注册表 (12 个工具, 跨平台路径解析)
-    ├── parser.rs        # SKILL.md YAML frontmatter 解析
-    └── fs_utils.rs      # 跨平台 symlink 操作 (创建/删除/检测)
+├── main.rs              # App entry point
+├── lib.rs               # Tauri Builder, registers all commands
+└── skills/              # Skills module
+    ├── mod.rs           # Module exports
+    ├── commands.rs      # 8 Tauri command functions
+    ├── models.rs        # Data structs (AiToolInfo, SkillInfo, SkillContent, etc.)
+    ├── registry.rs      # Tool registry (12 tools, cross-platform path resolution)
+    ├── parser.rs        # SKILL.md YAML frontmatter parser
+    └── fs_utils.rs      # Cross-platform symlink operations (create/delete/detect)
 ```
 
-## 路由结构
+## Route Structure
 
 ```
-/                                    → 全局首页 (功能模块入口导航)
-/skills                              → Skills Dashboard (工具概览)
-/skills/tools/:toolId                → 工具详情 (skills 列表 + 配置)
-/skills/tools/:toolId/:skillName     → Skill 详情 (Markdown 渲染)
-/skills/hub                          → 共享 Skills Hub
-/skills/hub/:skillName               → Hub Skill 详情
-/settings                            → 全局设置
+/                                    → Global home (module entry navigation)
+/skills                              → Skills Dashboard (tool overview)
+/skills/tools/:toolId                → Tool detail (skills list + config)
+/skills/tools/:toolId/:skillName     → Skill detail (Markdown rendering)
+/skills/hub                          → Shared Skills Hub
+/skills/hub/:skillName               → Hub skill detail
+/settings                            → Global settings
 ```
 
-应用采用模块化路由设计，未来可扩展 `/mcp/`、`/rules/` 等功能模块。
+The app uses a modular routing design to support future modules such as `/mcp/` and `/rules/`.
 
-## Rust Tauri Commands
+## Tauri Commands
 
-| Command | 参数 | 返回 | 说明 |
-|---------|------|------|------|
-| `scan_ai_tools` | - | `Vec<AiToolInfo>` | 扫描本机所有已注册 AI 工具 |
-| `list_skills` | `tool_id` | `Vec<SkillInfo>` | 列出指定工具的 skills |
-| `read_skill` | `skill_path` | `SkillContent` | 读取 SKILL.md + references |
-| `get_hub_skills` | - | `Vec<SkillInfo>` | 读取共享 hub 的 skills (含安装状态) |
-| `install_skill` | `hub_skill_name`, `tool_id` | `()` | 从 hub 安装 skill (创建 symlink) |
-| `remove_skill` | `tool_id`, `skill_name` | `()` | 移除 skill (symlink 解除/目录删除) |
-| `toggle_skill` | `tool_id`, `skill_name`, `enabled` | `()` | 启用/禁用 (重命名加 `.disabled-` 前缀) |
-| `read_config_file` | `file_path` | `String` | 读取配置文件内容 |
+| Command | Parameters | Returns | Description |
+|---------|-----------|---------|-------------|
+| `scan_ai_tools` | - | `Vec<AiToolInfo>` | Scan all registered AI tools on the machine |
+| `list_skills` | `tool_id` | `Vec<SkillInfo>` | List skills for a given tool |
+| `read_skill` | `skill_path` | `SkillContent` | Read SKILL.md and references |
+| `get_hub_skills` | - | `Vec<SkillInfo>` | Read hub skills (including install status) |
+| `install_skill` | `hub_skill_name`, `tool_id` | `()` | Install skill from hub (create symlink) |
+| `remove_skill` | `tool_id`, `skill_name` | `()` | Remove skill (unlink symlink or delete directory) |
+| `toggle_skill` | `tool_id`, `skill_name`, `enabled` | `()` | Enable/disable (rename with `.disabled-` prefix) |
+| `read_config_file` | `file_path` | `String` | Read config file contents |
 
-## 数据模型
+## Data Models
 
-### AiTool (前端类型)
+### AiTool (frontend type)
 
 ```typescript
 interface AiTool {
-  id: string;              // 工具标识 (如 "claude", "codex")
-  name: string;            // 显示名称
-  config_dir: string;      // 配置目录绝对路径
+  id: string;              // Tool identifier (e.g. "claude", "codex")
+  name: string;            // Display name
+  config_dir: string;      // Absolute path to config directory
   capability: "skills" | "config-only" | "detected-only";
   skills_dir: string | null;
   config_files: ConfigFile[];
   skill_count: number;
-  detected: boolean;       // 目录是否存在
+  detected: boolean;       // Whether the directory exists
 }
 ```
 
@@ -198,18 +198,18 @@ interface AiTool {
 
 ```typescript
 interface Skill {
-  name: string;            // 从 YAML frontmatter 解析
+  name: string;            // Parsed from YAML frontmatter
   description: string;
   allowed_tools: string | null;
-  dir_name: string;        // 目录名 (slug)
-  dir_path: string;        // 绝对路径
-  skill_file_path: string; // SKILL.md 绝对路径
-  is_symlink: boolean;     // 是否为 symlink
+  dir_name: string;        // Directory name (slug)
+  dir_path: string;        // Absolute path
+  skill_file_path: string; // Absolute path to SKILL.md
+  is_symlink: boolean;
   symlink_target: string | null;
   has_references: boolean;
   has_agents: boolean;
   has_scripts: boolean;
-  installed_in: string[];  // 已安装到哪些工具 (hub skills 专用)
+  installed_in: string[];  // Tools this skill is installed in (hub skills only)
 }
 ```
 
@@ -217,48 +217,48 @@ interface Skill {
 
 ```typescript
 interface SkillContent {
-  frontmatter: Record<string, string>;  // YAML frontmatter 键值对
-  markdown_body: string;                // Markdown 正文
-  raw_content: string;                  // 原始文件内容
-  references: ReferenceFile[];          // references/ 目录下的文件
+  frontmatter: Record<string, string>;  // YAML frontmatter key-value pairs
+  markdown_body: string;                // Markdown body
+  raw_content: string;                  // Raw file content
+  references: ReferenceFile[];          // Files under references/
 }
 ```
 
-## 依赖清单
+## Dependencies
 
-### npm packages
+### npm Packages
 
-| 包名 | 用途 |
-|------|------|
-| react-router-dom | Hash Router 路由 |
-| zustand | 轻量状态管理 |
-| react-markdown | Markdown 渲染 |
+| Package | Purpose |
+|---------|---------|
+| react-router-dom | Hash Router routing |
+| zustand | Lightweight state management |
+| react-markdown | Markdown rendering |
 | remark-gfm | GitHub Flavored Markdown |
-| remark-frontmatter | 跳过 YAML frontmatter |
-| gray-matter | 解析 YAML frontmatter |
-| lucide-react | 图标库 |
+| remark-frontmatter | Skip YAML frontmatter during rendering |
+| gray-matter | Parse YAML frontmatter |
+| lucide-react | Icon library |
 
-### Rust crates
+### Rust Crates
 
-| crate | 用途 |
-|-------|------|
-| walkdir | 递归目录遍历 |
-| dirs | 跨平台 home 目录获取 |
-| serde / serde_json | 序列化 |
+| Crate | Purpose |
+|-------|---------|
+| walkdir | Recursive directory traversal |
+| dirs | Cross-platform home directory resolution |
+| serde / serde_json | Serialization |
 
-## 运行方式
+## Running the App
 
 ```bash
-# 开发模式
+# Development mode
 bun run tauri dev
 
-# 构建
+# Production build
 bun run tauri build
 ```
 
-## 注意事项
+## Notes
 
-- Windows 创建 symlink 需要开发者模式或管理员权限
-- Codex 的 skills 在 `.system/` 子目录下，代码已做特殊处理
-- Gemini/Copilot 的 skills 目录可能为空，UI 会显示空状态引导
-- 所有文件系统操作通过 Rust 后端处理，前端不直接访问文件系统
+- Creating symlinks on Windows requires Developer Mode or administrator privileges.
+- Codex skills reside under the `.system/` subdirectory; the registry handles this specially.
+- Gemini and Copilot skills directories may be empty; the UI shows an empty state with guidance.
+- All file system operations are handled by the Rust backend; the frontend never accesses the file system directly.

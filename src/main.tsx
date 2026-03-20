@@ -9,6 +9,7 @@ import SkillDetailPage from "./pages/skills/SkillDetailPage";
 import HubPage from "./pages/skills/HubPage";
 import BySkillPage from "./pages/skills/BySkillPage";
 import Settings from "./pages/Settings";
+import CacheManagement from "./pages/CacheManagement";
 import "./App.css";
 
 const router = createHashRouter([
@@ -27,6 +28,7 @@ const router = createHashRouter([
       { path: "skills/hub", element: <HubPage /> },
       { path: "skills/hub/:skillName", element: <SkillDetailPage /> },
       { path: "settings", element: <Settings /> },
+      { path: "settings/cache", element: <CacheManagement /> },
     ],
   },
 ]);

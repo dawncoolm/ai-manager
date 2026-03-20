@@ -1,3 +1,4 @@
+mod cache;
 mod skills;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -17,6 +18,9 @@ pub fn run() {
             skills::commands::read_config_file,
             skills::commands::detect_editors,
             skills::commands::open_in_editor,
+            cache::commands::get_cache_info,
+            cache::commands::clear_tool_cache,
+            cache::commands::clear_all_caches,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

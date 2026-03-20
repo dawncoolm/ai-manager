@@ -16,9 +16,14 @@ const skillsSubNav = [
   { name: "Skills Hub", path: "/skills/hub" },
 ];
 
+const settingsSubNav = [
+  { name: "Conversation Cache", path: "/settings/cache" },
+];
+
 export default function Sidebar() {
   const location = useLocation();
   const inSkillsModule = location.pathname.startsWith("/skills");
+  const inSettingsModule = location.pathname.startsWith("/settings");
 
   return (
     <aside className="flex h-full w-[220px] flex-shrink-0 flex-col border-r border-gray-200 bg-white">
@@ -79,7 +84,7 @@ export default function Sidebar() {
           to="/settings"
           className={({ isActive }) =>
             `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              isActive
+              isActive || inSettingsModule
                 ? "bg-indigo-50 text-indigo-700"
                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             }`
@@ -88,6 +93,28 @@ export default function Sidebar() {
           <Settings className="h-4.5 w-4.5" />
           Settings
         </NavLink>
+
+        {/* Settings sub-navigation */}
+        {inSettingsModule && (
+          <div className="ml-3 mt-2 space-y-0.5 border-l border-gray-200 pl-3">
+            {settingsSubNav.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end
+                className={({ isActive }) =>
+                  `block rounded-md px-2.5 py-1.5 text-sm transition-colors ${
+                    isActive
+                      ? "font-medium text-indigo-700"
+                      : "text-gray-500 hover:text-gray-900"
+                  }`
+                }
+              >
+                {item.name}
+              </NavLink>
+            ))}
+          </div>
+        )}
       </div>
     </aside>
   );

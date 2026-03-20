@@ -53,30 +53,32 @@ export default function PluginsPage() {
   };
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="p-4 sm:p-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-gray-900">Plugins</h1>
           <p className="mt-1 text-sm text-gray-500">
             Manage Claude Code compatible plugins from local paths or GitHub
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Badge variant="info">{plugins.length} plugins</Badge>
-          <div className="w-64">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <div className="w-full sm:w-64">
             <SearchInput
               value={search}
               onChange={setSearch}
               placeholder="Search plugins..."
             />
           </div>
-          <button
-            onClick={() => setShowAddDialog(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
-          >
-            <Plus className="h-4 w-4" />
-            Add Plugin
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge variant="info">{plugins.length} plugins</Badge>
+            <button
+              onClick={() => setShowAddDialog(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
+            >
+              <Plus className="h-4 w-4" />
+              Add Plugin
+            </button>
+          </div>
         </div>
       </div>
 

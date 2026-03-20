@@ -41,44 +41,45 @@ export default function Sidebar() {
       {/* Module navigation */}
       <nav className="flex-1 space-y-1 px-3 py-3">
         {modules.map((mod) => (
-          <NavLink
-            key={mod.id}
-            to={mod.path}
-            end={mod.path === "/"}
-            className={({ isActive }) =>
-              `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                isActive || (mod.id === "skills" && inSkillsModule) || (mod.id === "plugins" && inPluginsModule)
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              }`
-            }
-          >
-            <mod.icon className="h-4.5 w-4.5" />
-            {mod.name}
-          </NavLink>
-        ))}
+          <div key={mod.id}>
+            <NavLink
+              to={mod.path}
+              end={mod.path === "/"}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive || (mod.id === "skills" && inSkillsModule) || (mod.id === "plugins" && inPluginsModule)
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`
+              }
+            >
+              <mod.icon className="h-4.5 w-4.5" />
+              {mod.name}
+            </NavLink>
 
-        {/* Skills sub-navigation */}
-        {inSkillsModule && (
-          <div className="ml-3 mt-2 space-y-0.5 border-l border-gray-200 pl-3">
-            {skillsSubNav.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end
-                className={({ isActive }) =>
-                  `block rounded-md px-2.5 py-1.5 text-sm transition-colors ${
-                    isActive
-                      ? "font-medium text-indigo-700"
-                      : "text-gray-500 hover:text-gray-900"
-                  }`
-                }
-              >
-                {item.name}
-              </NavLink>
-            ))}
+            {/* Skills sub-navigation */}
+            {mod.id === "skills" && inSkillsModule && (
+              <div className="ml-3 mt-1 space-y-0.5 border-l border-gray-200 pl-3">
+                {skillsSubNav.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end
+                    className={({ isActive }) =>
+                      `block rounded-md px-2.5 py-1.5 text-sm transition-colors ${
+                        isActive
+                          ? "font-medium text-indigo-700"
+                          : "text-gray-500 hover:text-gray-900"
+                      }`
+                    }
+                  >
+                    {item.name}
+                  </NavLink>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        ))}
       </nav>
 
       {/* Settings */}

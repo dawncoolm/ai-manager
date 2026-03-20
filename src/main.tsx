@@ -7,6 +7,7 @@ import SkillsDashboard from "./pages/skills/SkillsDashboard";
 import ToolDetailPage from "./pages/skills/ToolDetailPage";
 import SkillDetailPage from "./pages/skills/SkillDetailPage";
 import HubPage from "./pages/skills/HubPage";
+import BySkillPage from "./pages/skills/BySkillPage";
 import Settings from "./pages/Settings";
 import "./App.css";
 
@@ -22,6 +23,7 @@ const router = createHashRouter([
         path: "skills/tools/:toolId/:skillName",
         element: <SkillDetailPage />,
       },
+      { path: "skills/by-skill", element: <BySkillPage /> },
       { path: "skills/hub", element: <HubPage /> },
       { path: "skills/hub/:skillName", element: <SkillDetailPage /> },
       { path: "settings", element: <Settings /> },

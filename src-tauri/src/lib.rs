@@ -7,10 +7,12 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             skills::commands::scan_ai_tools,
             skills::commands::list_skills,
+            skills::commands::list_all_skills,
             skills::commands::read_skill,
             skills::commands::get_hub_skills,
             skills::commands::install_skill,
             skills::commands::remove_skill,
+            skills::commands::remove_skill_from_all,
             skills::commands::toggle_skill,
             skills::commands::read_config_file,
             skills::commands::detect_editors,

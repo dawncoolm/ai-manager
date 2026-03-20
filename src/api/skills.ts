@@ -1,4 +1,4 @@
-import type { AiTool, Skill, SkillContent, EditorInfo } from "../types/skills";
+import type { AiTool, Skill, SkillContent, EditorInfo, SkillGroup } from "../types/skills";
 
 async function tauriInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   if (!(window as any).__TAURI_INTERNALS__) {
@@ -16,6 +16,10 @@ export async function scanAiTools(): Promise<AiTool[]> {
 
 export async function listSkills(toolId: string): Promise<Skill[]> {
   return tauriInvoke<Skill[]>("list_skills", { toolId });
+}
+
+export async function listAllSkills(): Promise<SkillGroup[]> {
+  return tauriInvoke<SkillGroup[]>("list_all_skills");
 }
 
 export async function readSkill(skillPath: string): Promise<SkillContent> {
@@ -38,6 +42,10 @@ export async function removeSkill(
   skillName: string
 ): Promise<void> {
   return tauriInvoke("remove_skill", { toolId, skillName });
+}
+
+export async function removeSkillFromAll(skillName: string): Promise<void> {
+  return tauriInvoke("remove_skill_from_all", { skillName });
 }
 
 export async function toggleSkill(

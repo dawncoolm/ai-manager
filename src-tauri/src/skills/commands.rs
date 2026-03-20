@@ -2,6 +2,7 @@ use crate::skills::fs_utils;
 use crate::skills::models::*;
 use crate::skills::parser;
 use crate::skills::registry;
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -180,6 +181,67 @@ pub fn list_skills(tool_id: String) -> Result<Vec<SkillInfo>, String> {
 }
 
 #[tauri::command]
+pub fn list_all_skills() -> Result<Vec<SkillGroup>, String> {
+    let registry = registry::get_tool_registry();
+    let mut groups: HashMap<String, SkillGroup> = HashMap::new();
+
+    for entry in &registry {
+        let skills_subdir = match entry.def.skills_subdir {
+            Some(s) => s,
+            None => continue,
+        };
+        let config_dir = match (entry.dir_resolver)() {
+            Some(d) => d,
+            None => continue,
+        };
+        let skills_dir = config_dir.join(skills_subdir);
+        if !skills_dir.is_dir() {
+            continue;
+        }
+
+        for dir in list_skill_dirs(&skills_dir) {
+            if let Some(skill) = read_skill_from_dir(&dir) {
+                let tool_entry = SkillToolEntry {
+                    tool_id: entry.def.id.to_string(),
+                    tool_name: entry.def.name.to_string(),
+                    dir_path: skill.dir_path.clone(),
+                    skill_file_path: skill.skill_file_path.clone(),
+                    is_symlink: skill.is_symlink,
+                    symlink_target: skill.symlink_target.clone(),
+                    disabled: skill.disabled,
+                };
+
+                groups
+                    .entry(skill.dir_name.clone())
+                    .and_modify(|g| {
+                        if !skill.disabled && g.tools.iter().all(|t| t.disabled) {
+                            g.name = skill.name.clone();
+                            g.description = skill.description.clone();
+                            g.has_references = skill.has_references;
+                            g.has_agents = skill.has_agents;
+                            g.has_scripts = skill.has_scripts;
+                        }
+                        g.tools.push(tool_entry.clone());
+                    })
+                    .or_insert_with(|| SkillGroup {
+                        dir_name: skill.dir_name,
+                        name: skill.name,
+                        description: skill.description,
+                        has_references: skill.has_references,
+                        has_agents: skill.has_agents,
+                        has_scripts: skill.has_scripts,
+                        tools: vec![tool_entry],
+                    });
+            }
+        }
+    }
+
+    let mut result: Vec<SkillGroup> = groups.into_values().collect();
+    result.sort_by(|a, b| a.dir_name.cmp(&b.dir_name));
+    Ok(result)
+}
+
+#[tauri::command]
 pub fn read_skill(skill_path: String) -> Result<SkillContent, String> {
     let skill_dir = PathBuf::from(&skill_path);
     let skill_file = skill_dir.join("SKILL.md");
@@ -341,6 +403,45 @@ pub fn remove_skill(tool_id: String, skill_name: String) -> Result<(), String> {
     }
 
     fs_utils::remove_skill_dir(&skill_path)
+}
+
+#[tauri::command]
+pub fn remove_skill_from_all(skill_name: String) -> Result<(), String> {
+    let registry = registry::get_tool_registry();
+    let mut errors: Vec<String> = Vec::new();
+
+    for entry in &registry {
+        let skills_subdir = match entry.def.skills_subdir {
+            Some(s) => s,
+            None => continue,
+        };
+        let config_dir = match (entry.dir_resolver)() {
+            Some(d) => d,
+            None => continue,
+        };
+        let skills_dir = config_dir.join(skills_subdir);
+        if !skills_dir.is_dir() {
+            continue;
+        }
+
+        // Check both enabled and disabled paths
+        for candidate in [
+            skills_dir.join(&skill_name),
+            skills_dir.join(format!(".disabled-{}", skill_name)),
+        ] {
+            if candidate.exists() || fs_utils::is_symlink(&candidate) {
+                if let Err(e) = fs_utils::remove_skill_dir(&candidate) {
+                    errors.push(format!("{} ({}): {}", entry.def.name, candidate.display(), e));
+                }
+            }
+        }
+    }
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.join("; "))
+    }
 }
 
 #[tauri::command]

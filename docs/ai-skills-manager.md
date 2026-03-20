@@ -104,10 +104,11 @@ src/
 ├── store/
 │   └── useSkillsStore.ts            # Zustand store (tools, hubSkills)
 ├── api/
-│   └── skills.ts                    # Tauri invoke() wrappers (8 APIs)
+│   └── skills.ts                    # Tauri invoke() wrappers (12 APIs)
 ├── hooks/
 │   ├── useAiTools.ts                # Fetch AI tool list
 │   ├── useSkills.ts                 # Fetch skills for a given tool
+│   ├── useAllSkills.ts              # Fetch all skills grouped by name across tools
 │   └── useSkillContent.ts           # Fetch full skill content
 ├── components/
 │   ├── layout/
@@ -132,6 +133,7 @@ src/
         ├── SkillsDashboard.tsx      # Tool overview (card grid, grouped by capability)
         ├── ToolDetailPage.tsx       # Tool detail (skills list + config)
         ├── SkillDetailPage.tsx      # Skill detail (Markdown rendering + metadata)
+        ├── BySkillPage.tsx          # Group by skill name (cross-tool view + bulk actions)
         └── HubPage.tsx             # Shared Skills Hub (install management)
 ```
 
@@ -143,8 +145,8 @@ src-tauri/src/
 ├── lib.rs               # Tauri Builder, registers all commands
 └── skills/              # Skills module
     ├── mod.rs           # Module exports
-    ├── commands.rs      # 8 Tauri command functions
-    ├── models.rs        # Data structs (AiToolInfo, SkillInfo, SkillContent, etc.)
+    ├── commands.rs      # 12 Tauri command functions
+    ├── models.rs        # Data structs (AiToolInfo, SkillInfo, SkillGroup, SkillContent, etc.)
     ├── registry.rs      # Tool registry (12 tools, cross-platform path resolution)
     ├── parser.rs        # SKILL.md YAML frontmatter parser
     └── fs_utils.rs      # Cross-platform symlink operations (create/delete/detect)
@@ -157,6 +159,7 @@ src-tauri/src/
 /skills                              → Skills Dashboard (tool overview)
 /skills/tools/:toolId                → Tool detail (skills list + config)
 /skills/tools/:toolId/:skillName     → Skill detail (Markdown rendering)
+/skills/by-skill                     → By Skill (cross-tool grouped view)
 /skills/hub                          → Shared Skills Hub
 /skills/hub/:skillName               → Hub skill detail
 /settings                            → Global settings
@@ -170,12 +173,16 @@ The app uses a modular routing design to support future modules such as `/mcp/` 
 |---------|-----------|---------|-------------|
 | `scan_ai_tools` | - | `Vec<AiToolInfo>` | Scan all registered AI tools on the machine |
 | `list_skills` | `tool_id` | `Vec<SkillInfo>` | List skills for a given tool |
+| `list_all_skills` | - | `Vec<SkillGroup>` | List all skills across tools, grouped by `dir_name` |
 | `read_skill` | `skill_path` | `SkillContent` | Read SKILL.md and references |
 | `get_hub_skills` | - | `Vec<SkillInfo>` | Read hub skills (including install status) |
 | `install_skill` | `hub_skill_name`, `tool_id` | `()` | Install skill from hub (create symlink) |
 | `remove_skill` | `tool_id`, `skill_name` | `()` | Remove skill (unlink symlink or delete directory) |
+| `remove_skill_from_all` | `skill_name` | `()` | Remove skill from all tools at once (best-effort) |
 | `toggle_skill` | `tool_id`, `skill_name`, `enabled` | `()` | Enable/disable (rename with `.disabled-` prefix) |
 | `read_config_file` | `file_path` | `String` | Read config file contents |
+| `detect_editors` | - | `Vec<EditorInfo>` | Detect available code editors in PATH |
+| `open_in_editor` | `file_path`, `editor` | `()` | Open file in specified editor |
 
 ## Data Models
 
@@ -210,6 +217,30 @@ interface Skill {
   has_agents: boolean;
   has_scripts: boolean;
   installed_in: string[];  // Tools this skill is installed in (hub skills only)
+}
+```
+
+### SkillGroup (cross-tool grouped view)
+
+```typescript
+interface SkillGroup {
+  dir_name: string;          // Grouping key (directory name)
+  name: string;              // Display name from SKILL.md
+  description: string;
+  has_references: boolean;
+  has_agents: boolean;
+  has_scripts: boolean;
+  tools: SkillToolEntry[];   // Which tools have this skill
+}
+
+interface SkillToolEntry {
+  tool_id: string;           // e.g. "claude", "codex"
+  tool_name: string;         // Display name
+  dir_path: string;          // Absolute path to this tool's copy
+  skill_file_path: string;
+  is_symlink: boolean;
+  symlink_target: string | null;
+  disabled: boolean;
 }
 ```
 

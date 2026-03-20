@@ -46,6 +46,26 @@ export interface ReferenceFile {
   content: string;
 }
 
+export interface SkillToolEntry {
+  tool_id: string;
+  tool_name: string;
+  dir_path: string;
+  skill_file_path: string;
+  is_symlink: boolean;
+  symlink_target: string | null;
+  disabled: boolean;
+}
+
+export interface SkillGroup {
+  dir_name: string;
+  name: string;
+  description: string;
+  has_references: boolean;
+  has_agents: boolean;
+  has_scripts: boolean;
+  tools: SkillToolEntry[];
+}
+
 export interface EditorInfo {
   id: string;
   label: string;

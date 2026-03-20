@@ -12,6 +12,7 @@ const modules = [
 
 const skillsSubNav = [
   { name: "Dashboard", path: "/skills" },
+  { name: "By Skill", path: "/skills/by-skill" },
   { name: "Skills Hub", path: "/skills/hub" },
 ];
 

@@ -52,6 +52,28 @@ pub struct ReferenceFile {
     pub content: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SkillToolEntry {
+    pub tool_id: String,
+    pub tool_name: String,
+    pub dir_path: String,
+    pub skill_file_path: String,
+    pub is_symlink: bool,
+    pub symlink_target: Option<String>,
+    pub disabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SkillGroup {
+    pub dir_name: String,
+    pub name: String,
+    pub description: String,
+    pub has_references: bool,
+    pub has_agents: bool,
+    pub has_scripts: bool,
+    pub tools: Vec<SkillToolEntry>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct EditorInfo {
     pub id: String,

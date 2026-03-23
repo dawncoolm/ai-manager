@@ -22,6 +22,7 @@ pub fn run() {
             cache::commands::get_cache_info,
             cache::commands::clear_tool_cache,
             cache::commands::clear_all_caches,
+            plugins::commands::add_plugin,
             plugins::commands::add_plugin_local,
             plugins::commands::add_plugin_github,
             plugins::commands::list_plugins,
@@ -34,6 +35,11 @@ pub fn run() {
             plugins::commands::install_plugin_command_to_all,
             plugins::commands::remove_plugin_skill,
             plugins::commands::remove_plugin_command,
+            plugins::commands::fetch_marketplace,
+            plugins::commands::import_marketplace_plugins,
+            plugins::commands::list_marketplaces,
+            plugins::commands::update_marketplace,
+            plugins::commands::remove_marketplace,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

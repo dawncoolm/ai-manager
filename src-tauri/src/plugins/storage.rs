@@ -10,6 +10,10 @@ pub fn get_repos_dir() -> Option<PathBuf> {
     get_plugins_base_dir().map(|p| p.join("repos"))
 }
 
+pub fn get_marketplaces_dir() -> Option<PathBuf> {
+    get_plugins_base_dir().map(|p| p.join("marketplaces"))
+}
+
 fn registry_path() -> Option<PathBuf> {
     get_plugins_base_dir().map(|p| p.join("registry.json"))
 }
@@ -20,6 +24,7 @@ pub fn load_registry() -> Result<PluginRegistryFile, String> {
     if !path.exists() {
         return Ok(PluginRegistryFile {
             plugins: Vec::new(),
+            marketplaces: Vec::new(),
         });
     }
 

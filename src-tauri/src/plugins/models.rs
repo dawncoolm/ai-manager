@@ -43,6 +43,8 @@ pub struct PluginEntry {
     pub local_path: String,
     pub metadata: PluginMetadata,
     pub added_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub marketplace_id: Option<String>,
 }
 
 /// Flattened metadata for frontend consumption
@@ -95,6 +97,18 @@ pub struct PluginCommandInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MarketplaceEntry {
+    pub id: String,
+    pub url: String,
+    pub name: String,
+    pub owner_name: String,
+    pub plugin_count: usize,
+    pub added_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginRegistryFile {
     pub plugins: Vec<PluginEntry>,
+    #[serde(default)]
+    pub marketplaces: Vec<MarketplaceEntry>,
 }

@@ -1,5 +1,15 @@
-import type { PluginEntry, PluginContents } from "../types/plugins";
+import type {
+  PluginEntry,
+  PluginContents,
+  MarketplaceEntry,
+  MarketplaceInfo,
+  MarketplaceImportResult,
+} from "../types/plugins";
 import { tauriInvoke } from "./invoke";
+
+export async function addPlugin(input: string): Promise<PluginEntry> {
+  return tauriInvoke<PluginEntry>("add_plugin", { input });
+}
 
 export async function addPluginLocal(path: string): Promise<PluginEntry> {
   return tauriInvoke<PluginEntry>("add_plugin_local", { path });
@@ -89,4 +99,34 @@ export async function removePluginCommand(
     commandFile,
     toolId,
   });
+}
+
+// ── Marketplace ──
+
+export async function fetchMarketplace(url: string): Promise<MarketplaceInfo> {
+  return tauriInvoke<MarketplaceInfo>("fetch_marketplace", { url });
+}
+
+export async function importMarketplacePlugins(
+  url: string
+): Promise<MarketplaceImportResult> {
+  return tauriInvoke<MarketplaceImportResult>("import_marketplace_plugins", {
+    url,
+  });
+}
+
+export async function listMarketplaces(): Promise<MarketplaceEntry[]> {
+  return tauriInvoke<MarketplaceEntry[]>("list_marketplaces");
+}
+
+export async function updateMarketplace(
+  marketplaceId: string
+): Promise<MarketplaceImportResult> {
+  return tauriInvoke<MarketplaceImportResult>("update_marketplace", {
+    marketplaceId,
+  });
+}
+
+export async function removeMarketplace(marketplaceId: string): Promise<void> {
+  return tauriInvoke("remove_marketplace", { marketplaceId });
 }

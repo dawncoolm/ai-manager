@@ -18,6 +18,7 @@ export interface PluginEntry {
   local_path: string;
   metadata: PluginMetadata;
   added_at: string;
+  marketplace_id?: string;
 }
 
 export interface PluginContents {
@@ -38,4 +39,44 @@ export interface PluginCommandInfo {
   command_name: string;
   file_path: string;
   installed_in: string[];
+}
+
+// ── Marketplace types ──
+
+export interface MarketplaceInfo {
+  name: string;
+  owner_name: string;
+  description: string | null;
+  plugins: MarketplacePluginPreview[];
+}
+
+export interface MarketplacePluginPreview {
+  name: string;
+  description: string | null;
+  version: string | null;
+  source_type: string;
+  already_added: boolean;
+}
+
+export interface MarketplaceImportResult {
+  total: number;
+  succeeded: number;
+  skipped: number;
+  failed: number;
+  results: PluginImportStatus[];
+}
+
+export interface PluginImportStatus {
+  plugin_name: string;
+  status: "success" | "skipped" | "failed";
+  message: string | null;
+}
+
+export interface MarketplaceEntry {
+  id: string;
+  url: string;
+  name: string;
+  owner_name: string;
+  plugin_count: number;
+  added_at: string;
 }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Plugin Manager is a module of the ai-manager desktop application that provides full compatibility with Claude Code's plugin system. It supports adding plugins from local filesystem paths or GitHub repositories, browsing plugin contents (skills and commands), and installing them to any AI coding tool on the machine — individually or in bulk.
+Plugin Manager is a module of the ai-manager desktop application that provides full compatibility with Claude Code's plugin system. It supports adding plugins from local filesystem paths or GitHub repositories, importing from Claude Code marketplace repositories, browsing plugin contents (skills and commands), and installing them to any AI coding tool on the machine — individually or in bulk.
 
 ## Plugin Structure (Claude Code Compatible)
 
@@ -49,6 +49,99 @@ The `author` field supports both object form `{ "name": "...", "email": "..." }`
 - Requires Git to be installed and available in PATH
 - Can be updated (re-pulled) from the UI
 
+### Auto-Detection
+
+The `add_plugin` unified command auto-detects the source type:
+- Absolute path (e.g., `D:\plugins\my-plugin`) → treated as Local
+- Otherwise (e.g., `owner/repo`) → treated as GitHub
+
+## Marketplace
+
+### Overview
+
+Marketplace support allows batch-importing plugins from a Claude Code compatible marketplace repository. A marketplace is a Git repo (or local directory) containing `.claude-plugin/marketplace.json` that lists multiple plugins.
+
+### marketplace.json Format
+
+```json
+{
+  "name": "My Plugin Marketplace",
+  "owner": { "name": "Owner Name", "email": "owner@example.com" },
+  "metadata": {
+    "description": "A collection of useful plugins",
+    "version": "1.0.0",
+    "pluginRoot": "plugins"
+  },
+  "plugins": [
+    {
+      "name": "my-plugin",
+      "source": "./plugins/my-plugin",
+      "description": "Plugin description",
+      "version": "1.0.0",
+      "author": "Author Name",
+      "keywords": ["keyword1"]
+    },
+    {
+      "name": "remote-plugin",
+      "source": { "source": "github", "repo": "owner/repo" },
+      "description": "A GitHub-hosted plugin"
+    }
+  ]
+}
+```
+
+### Plugin Source Types in marketplace.json
+
+The `source` field in each plugin entry supports:
+
+| Type | Format | Description |
+|------|--------|-------------|
+| Relative path | `"./path/to/plugin"` | Local subdirectory within the marketplace repo |
+| GitHub | `{ "source": "github", "repo": "owner/repo" }` | GitHub repository |
+| URL | `{ "source": "url", "url": "https://..." }` | Generic Git URL |
+| Git subdir | `{ "source": "git-subdir", "url": "...", "path": "..." }` | Subdirectory within a Git repo |
+| npm | `{ "source": "npm", "package": "pkg-name" }` | npm package (parsed but not yet supported for import) |
+
+### Marketplace Sources
+
+Like plugins, marketplace sources are auto-detected:
+- Absolute path → reads `.claude-plugin/marketplace.json` from local directory
+- `owner/repo` or GitHub URL → clones into `~/.agents/plugins/marketplaces/{owner}--{repo}/`
+
+### Marketplace Workflow
+
+1. **Fetch**: User enters a marketplace source (local path or GitHub `owner/repo`). The app clones/reads and parses `marketplace.json`, then shows a preview of available plugins with their source types and whether they are already added.
+2. **Import**: Batch-imports all listed plugins. Relative-path plugins are cloned/copied from the marketplace directory; GitHub/URL plugins are cloned independently. Results show per-plugin success/skip/fail status.
+3. **Persist**: After import, a `MarketplaceEntry` is saved to the registry so the marketplace can be updated or removed later.
+4. **Update**: Re-reads (local) or re-pulls (GitHub) the marketplace, then imports any new plugins and updates metadata for existing ones.
+5. **Remove**: Deletes the marketplace entry and all plugins that were imported from it.
+
+### Marketplace Storage
+
+Marketplace references are persisted in the same `registry.json` alongside plugins:
+
+```json
+{
+  "plugins": [ ... ],
+  "marketplaces": [
+    {
+      "id": "my-marketplace",
+      "url": "owner/marketplace-repo",
+      "name": "My Plugin Marketplace",
+      "owner_name": "Owner Name",
+      "plugin_count": 5,
+      "added_at": "1710000000"
+    }
+  ]
+}
+```
+
+Plugins imported from a marketplace have a `marketplace_id` field linking them back to the marketplace entry.
+
+### Marketplace ID Generation
+
+- Slugified from marketplace name (lowercased, non-alphanumeric characters replaced with hyphens)
+
 ## Storage
 
 ### Registry
@@ -71,6 +164,17 @@ Location: `~/.agents/plugins/registry.json`
         "keywords": ["..."],
         "repository": "..."
       },
+      "added_at": "1710000000",
+      "marketplace_id": null
+    }
+  ],
+  "marketplaces": [
+    {
+      "id": "my-marketplace",
+      "url": "owner/marketplace-repo",
+      "name": "My Plugin Marketplace",
+      "owner_name": "Owner Name",
+      "plugin_count": 5,
       "added_at": "1710000000"
     }
   ]
@@ -81,13 +185,17 @@ Location: `~/.agents/plugins/registry.json`
 
 ```
 ~/.agents/plugins/
-├── registry.json              # Persistent plugin list
-└── repos/                     # Cloned GitHub plugin repos
-    └── owner--repo/
-        ├── .claude-plugin/
-        │   └── plugin.json
-        ├── skills/
-        └── commands/
+├── registry.json              # Persistent plugin list + marketplace entries
+├── repos/                     # Cloned GitHub plugin repos
+│   └── owner--repo/
+│       ├── .claude-plugin/
+│       │   └── plugin.json
+│       ├── skills/
+│       └── commands/
+└── marketplaces/              # Cloned marketplace repos
+    └── owner--marketplace-repo/
+        └── .claude-plugin/
+            └── marketplace.json
 ```
 
 ### Plugin ID Generation
@@ -135,10 +243,11 @@ Commands are **file symlinks** from the plugin's `commands/{name}.md` to the tar
 ```
 src-tauri/src/plugins/
 ├── mod.rs           # Module exports
-├── models.rs        # Data structs (PluginEntry, PluginSource, PluginContents, etc.)
+├── models.rs        # Data structs (PluginEntry, PluginSource, MarketplaceEntry, etc.)
+├── marketplace.rs   # Marketplace serde models (MarketplaceJson, MarketplacePluginSource, etc.)
 ├── storage.rs       # Registry persistence (load/save ~/.agents/plugins/registry.json)
 ├── github.rs        # Git CLI integration (clone, pull, availability check)
-└── commands.rs      # 12 Tauri commands
+└── commands.rs      # 19 Tauri commands
 ```
 
 ### Frontend
@@ -146,17 +255,17 @@ src-tauri/src/plugins/
 ```
 src/
 ├── types/plugins.ts                          # TypeScript interfaces
-├── api/plugins.ts                            # Tauri invoke wrappers (12 APIs)
-├── store/usePluginsStore.ts                  # Zustand store
+├── api/plugins.ts                            # Tauri invoke wrappers (19 APIs)
+├── store/usePluginsStore.ts                  # Zustand store (plugins + marketplaces)
 ├── hooks/
 │   ├── usePlugins.ts                         # Plugin list hook
 │   └── usePluginContents.ts                  # Plugin contents hook
 ├── components/plugins/
 │   ├── PluginCard.tsx                        # Plugin list card (source badge, metadata)
-│   ├── AddPluginDialog.tsx                   # Add dialog (Local Path / GitHub tabs)
+│   ├── AddPluginDialog.tsx                   # Add dialog (Plugin / Marketplace tabs)
 │   └── PluginInstallDialog.tsx               # Install-to-tool dialog (single + all)
 └── pages/plugins/
-    ├── PluginsPage.tsx                       # Main plugin list (add/update/remove)
+    ├── PluginsPage.tsx                       # Main plugin list + marketplace section (add/update/remove)
     └── PluginDetailPage.tsx                  # Detail view (skills & commands with install/remove)
 ```
 
@@ -164,7 +273,7 @@ src/
 
 | File | Change |
 |------|--------|
-| `src-tauri/src/lib.rs` | Added `mod plugins` and registered 12 new commands |
+| `src-tauri/src/lib.rs` | Added `mod plugins` and registered 19 new commands |
 | `src-tauri/src/skills/registry.rs` | Added `commands_subdir` field to `ToolDefinition` |
 | `src-tauri/src/skills/fs_utils.rs` | Added `create_file_symlink` and `remove_file_or_symlink` |
 | `src/main.tsx` | Added `/plugins` and `/plugins/:pluginId` routes |
@@ -182,6 +291,7 @@ src/
 
 | Command | Parameters | Returns | Description |
 |---------|-----------|---------|-------------|
+| `add_plugin` | `input` | `PluginEntry` | Add plugin (auto-detects local path vs GitHub) |
 | `add_plugin_local` | `path` | `PluginEntry` | Add plugin from local filesystem path |
 | `add_plugin_github` | `owner`, `repo` | `PluginEntry` | Clone plugin from GitHub and add |
 | `list_plugins` | - | `Vec<PluginEntry>` | List all added plugins |
@@ -194,6 +304,11 @@ src/
 | `install_plugin_command_to_all` | `plugin_id`, `command_file` | `()` | Symlink command to all commands-capable tools |
 | `remove_plugin_skill` | `plugin_id`, `skill_dir_name`, `tool_id` | `()` | Remove skill symlink from tool |
 | `remove_plugin_command` | `plugin_id`, `command_file`, `tool_id` | `()` | Remove command symlink from tool |
+| `fetch_marketplace` | `url` | `MarketplaceInfo` | Clone/read marketplace and return plugin preview |
+| `import_marketplace_plugins` | `url` | `MarketplaceImportResult` | Batch-import all plugins from marketplace |
+| `list_marketplaces` | - | `Vec<MarketplaceEntry>` | List saved marketplace entries |
+| `update_marketplace` | `marketplace_id` | `MarketplaceImportResult` | Re-fetch marketplace and import new plugins |
+| `remove_marketplace` | `marketplace_id` | `()` | Remove marketplace and all its plugins |
 
 ## Data Models
 
@@ -205,6 +320,20 @@ interface PluginEntry {
   source: PluginSource;      // { type: "Local", path } | { type: "GitHub", owner, repo }
   local_path: string;        // Absolute path to plugin root on disk
   metadata: PluginMetadata;  // Parsed from plugin.json
+  added_at: string;          // Timestamp
+  marketplace_id?: string;   // ID of the marketplace this plugin was imported from (if any)
+}
+```
+
+### MarketplaceEntry
+
+```typescript
+interface MarketplaceEntry {
+  id: string;                // Slugified marketplace name
+  url: string;               // Original input (owner/repo or local path)
+  name: string;              // From marketplace.json
+  owner_name: string;        // From marketplace.json
+  plugin_count: number;      // Number of plugins in marketplace
   added_at: string;          // Timestamp
 }
 ```

@@ -35,11 +35,11 @@ pub fn run() {
             plugins::commands::install_plugin_command_to_all,
             plugins::commands::remove_plugin_skill,
             plugins::commands::remove_plugin_command,
-            plugins::commands::fetch_marketplace,
-            plugins::commands::import_marketplace_plugins,
-            plugins::commands::list_marketplaces,
-            plugins::commands::update_marketplace,
-            plugins::commands::remove_marketplace,
+            plugins::marketplace_commands::fetch_marketplace,
+            plugins::marketplace_commands::import_marketplace_plugins,
+            plugins::marketplace_commands::list_marketplaces,
+            plugins::marketplace_commands::update_marketplace,
+            plugins::marketplace_commands::remove_marketplace,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

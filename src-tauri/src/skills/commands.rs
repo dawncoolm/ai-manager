@@ -244,6 +244,28 @@ pub fn list_all_skills() -> Result<Vec<SkillGroup>, String> {
 #[tauri::command]
 pub fn read_skill(skill_path: String) -> Result<SkillContent, String> {
     let skill_dir = PathBuf::from(&skill_path);
+
+    // Reject any path with ".." components
+    if skill_dir
+        .components()
+        .any(|c| c == std::path::Component::ParentDir)
+    {
+        return Err("Invalid path: path traversal not allowed".to_string());
+    }
+
+    // Path must be within hub_dir or a known tool config directory
+    let hub_dir = registry::get_hub_dir();
+    let tool_dirs: Vec<PathBuf> = registry::get_tool_registry()
+        .iter()
+        .filter_map(|e| (e.dir_resolver)())
+        .collect();
+    let is_allowed = hub_dir
+        .as_ref()
+        .map_or(false, |d| skill_dir.starts_with(d))
+        || tool_dirs.iter().any(|d| skill_dir.starts_with(d));
+    if !is_allowed {
+        return Err("Access denied: path is outside allowed directories".to_string());
+    }
     let skill_file = skill_dir.join("SKILL.md");
 
     let raw_content = fs::read_to_string(&skill_file)
@@ -487,7 +509,26 @@ pub fn toggle_skill(tool_id: String, skill_name: String, enabled: bool) -> Resul
 
 #[tauri::command]
 pub fn read_config_file(file_path: String) -> Result<String, String> {
-    fs::read_to_string(&file_path)
+    let path = PathBuf::from(&file_path);
+
+    // Reject any path with ".." components
+    if path
+        .components()
+        .any(|c| c == std::path::Component::ParentDir)
+    {
+        return Err("Invalid path: path traversal not allowed".to_string());
+    }
+
+    // Path must be within one of the known tool config directories
+    let allowed_dirs: Vec<PathBuf> = registry::get_tool_registry()
+        .iter()
+        .filter_map(|e| (e.dir_resolver)())
+        .collect();
+    if !allowed_dirs.iter().any(|dir| path.starts_with(dir)) {
+        return Err("Access denied: path is outside allowed config directories".to_string());
+    }
+
+    fs::read_to_string(&path)
         .map_err(|e| format!("Failed to read config file: {}", e))
 }
 

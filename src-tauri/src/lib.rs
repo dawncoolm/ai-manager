@@ -2,6 +2,10 @@ mod cache;
 mod plugins;
 mod skills;
 
+pub fn handle_startup_args(args: &[String]) -> Option<i32> {
+    skills::elevation::handle_elevated_helper_args(args)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -9,6 +13,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             skills::commands::scan_ai_tools,
             skills::commands::list_skills,
+            skills::commands::list_commands,
             skills::commands::list_all_skills,
             skills::commands::read_skill,
             skills::commands::get_hub_skills,
@@ -17,8 +22,10 @@ pub fn run() {
             skills::commands::remove_skill_from_all,
             skills::commands::toggle_skill,
             skills::commands::read_config_file,
+            skills::commands::read_command_file,
             skills::commands::detect_editors,
             skills::commands::open_in_editor,
+            skills::commands::remove_command,
             cache::commands::get_cache_info,
             cache::commands::clear_tool_cache,
             cache::commands::clear_all_caches,
@@ -33,6 +40,8 @@ pub fn run() {
             plugins::commands::install_plugin_skill_to_all,
             plugins::commands::install_plugin_command,
             plugins::commands::install_plugin_command_to_all,
+            plugins::commands::install_all_plugin_skills_to_all_tools,
+            plugins::commands::install_all_plugin_commands_to_all_tools,
             plugins::commands::remove_plugin_skill,
             plugins::commands::remove_plugin_command,
             plugins::marketplace_commands::fetch_marketplace,

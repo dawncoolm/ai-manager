@@ -21,7 +21,9 @@ fn parse_marketplace_url(url: &str) -> Result<(String, String), String> {
         .replace("http://github.com/", "");
     let parts: Vec<&str> = stripped.split('/').filter(|s| !s.is_empty()).collect();
     if parts.len() < 2 || parts[0].is_empty() || parts[1].is_empty() {
-        return Err("Invalid marketplace URL. Use owner/repo or https://github.com/owner/repo".to_string());
+        return Err(
+            "Invalid marketplace URL. Use owner/repo or https://github.com/owner/repo".to_string(),
+        );
     }
     Ok((parts[0].to_string(), parts[1].to_string()))
 }
@@ -139,7 +141,13 @@ fn predict_plugin_id_for_entry(
                     .replace("https://", "")
                     .replace("http://", "")
                     .chars()
-                    .map(|c| if c.is_alphanumeric() || c == '-' { c } else { '-' })
+                    .map(|c| {
+                        if c.is_alphanumeric() || c == '-' {
+                            c
+                        } else {
+                            '-'
+                        }
+                    })
                     .collect();
                 Some(sanitized)
             }
@@ -163,8 +171,7 @@ pub fn fetch_marketplace(url: String) -> Result<MarketplaceInfo, String> {
         .plugins
         .iter()
         .map(|entry| {
-            let predicted_id =
-                predict_plugin_id_for_entry(entry, &marketplace_dir, &plugin_root);
+            let predicted_id = predict_plugin_id_for_entry(entry, &marketplace_dir, &plugin_root);
             let already_added = predicted_id
                 .as_deref()
                 .map(|id| existing_ids.contains(&id))
@@ -267,9 +274,13 @@ fn import_single_plugin(
     marketplace_id: &str,
 ) -> Result<PluginImportStatus, String> {
     match &entry.source {
-        MarketplacePluginSource::Path(rel_path) => {
-            import_relative_path_plugin(entry, marketplace_dir, plugin_root, rel_path, marketplace_id)
-        }
+        MarketplacePluginSource::Path(rel_path) => import_relative_path_plugin(
+            entry,
+            marketplace_dir,
+            plugin_root,
+            rel_path,
+            marketplace_id,
+        ),
         MarketplacePluginSource::Object(obj) => match obj {
             MarketplaceSourceObject::GitHub { repo, .. } => {
                 import_github_plugin(entry, repo, marketplace_id)
@@ -279,16 +290,15 @@ fn import_single_plugin(
             }
             MarketplaceSourceObject::GitSubdir { url, path, .. } => {
                 // Treat git-subdir as a git URL clone; subdirectory support is not yet implemented
-                import_git_url_plugin(entry, url, marketplace_id)
-                    .map(|mut s| {
-                        if s.status == "success" {
-                            s.message = Some(format!(
-                                "Cloned repository (subdirectory '{}' not yet supported)",
-                                path
-                            ));
-                        }
-                        s
-                    })
+                import_git_url_plugin(entry, url, marketplace_id).map(|mut s| {
+                    if s.status == "success" {
+                        s.message = Some(format!(
+                            "Cloned repository (subdirectory '{}' not yet supported)",
+                            path
+                        ));
+                    }
+                    s
+                })
             }
             MarketplaceSourceObject::Npm { .. } => Ok(PluginImportStatus {
                 plugin_name: entry.name.clone(),
@@ -454,7 +464,13 @@ fn import_git_url_plugin(
         .replace("https://", "")
         .replace("http://", "")
         .chars()
-        .map(|c| if c.is_alphanumeric() || c == '-' { c } else { '-' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' {
+                c
+            } else {
+                '-'
+            }
+        })
         .collect();
 
     let target_dir = repos_dir.join(&dir_name);
@@ -539,9 +555,11 @@ pub fn update_marketplace(marketplace_id: String) -> Result<MarketplaceImportRes
     // Update metadata for existing plugins from this marketplace
     {
         let mut reg = storage::load_registry()?;
-        for plugin in reg.plugins.iter_mut().filter(|p| {
-            p.marketplace_id.as_deref() == Some(marketplace_id.as_str())
-        }) {
+        for plugin in reg
+            .plugins
+            .iter_mut()
+            .filter(|p| p.marketplace_id.as_deref() == Some(marketplace_id.as_str()))
+        {
             let plugin_dir = PathBuf::from(&plugin.local_path);
             if let Ok(pj) = read_plugin_json(&plugin_dir) {
                 plugin.metadata = pj.into();

@@ -289,7 +289,7 @@ bun run tauri build
 
 ## Notes
 
-- Creating symlinks on Windows requires Developer Mode or administrator privileges.
+- Creating symlinks on Windows still requires Developer Mode or administrator privileges. When a symlink install fails with the Windows privilege error, the app now automatically retries through a one-shot elevated helper so the user can confirm the UAC prompt and continue.
 - Codex skills reside under the `.system/` subdirectory; the registry handles this specially.
 - Gemini and Copilot skills directories may be empty; the UI shows an empty state with guidance.
 - All file system operations are handled by the Rust backend; the frontend never accesses the file system directly.

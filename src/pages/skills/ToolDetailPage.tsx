@@ -1,14 +1,16 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useAiTools } from "../../hooks/useAiTools";
 import { useSkills } from "../../hooks/useSkills";
+import { useCommands } from "../../hooks/useCommands";
 import SkillCard from "../../components/skills/SkillCard";
 import SkillActions from "../../components/skills/SkillActions";
+import CommandsViewer from "../../components/skills/CommandsViewer";
 import ConfigViewer from "../../components/skills/ConfigViewer";
 import EmptyState from "../../components/ui/EmptyState";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import Badge from "../../components/ui/Badge";
-import { useState } from "react";
 import SearchInput from "../../components/ui/SearchInput";
 
 export default function ToolDetailPage() {
@@ -16,10 +18,22 @@ export default function ToolDetailPage() {
   const navigate = useNavigate();
   const { tools } = useAiTools();
   const { skills, loading, error, refetch } = useSkills(toolId);
-  const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"skills" | "config">("skills");
-
   const tool = tools.find((t) => t.id === toolId);
+  const hasCommands = Boolean(tool?.commands_dir);
+  const {
+    commands,
+    loading: commandsLoading,
+    error: commandsError,
+    refetch: refetchCommands,
+  } = useCommands(hasCommands ? toolId : undefined);
+  const [search, setSearch] = useState("");
+  const [tab, setTab] = useState<"skills" | "commands" | "config">("skills");
+
+  useEffect(() => {
+    if (!hasCommands && tab === "commands") {
+      setTab("skills");
+    }
+  }, [hasCommands, tab]);
 
   const filtered = skills.filter(
     (s) =>
@@ -61,6 +75,18 @@ export default function ToolDetailPage() {
         >
           Skills
         </button>
+        {hasCommands && (
+          <button
+            onClick={() => setTab("commands")}
+            className={`border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+              tab === "commands"
+                ? "border-indigo-500 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Commands
+          </button>
+        )}
         <button
           onClick={() => setTab("config")}
           className={`border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
@@ -118,6 +144,18 @@ export default function ToolDetailPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {tab === "commands" && toolId && hasCommands && (
+        <div className="mt-6">
+          <CommandsViewer
+            toolId={toolId}
+            commands={commands}
+            loading={commandsLoading}
+            error={commandsError}
+            onRefresh={refetchCommands}
+          />
         </div>
       )}
 

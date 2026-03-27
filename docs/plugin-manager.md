@@ -247,7 +247,7 @@ src-tauri/src/plugins/
 ├── marketplace.rs   # Marketplace serde models (MarketplaceJson, MarketplacePluginSource, etc.)
 ├── storage.rs       # Registry persistence (load/save ~/.agents/plugins/registry.json)
 ├── github.rs        # Git CLI integration (clone, pull, availability check)
-└── commands.rs      # 19 Tauri commands
+└── commands.rs      # 21 Tauri commands
 ```
 
 ### Frontend
@@ -273,7 +273,7 @@ src/
 
 | File | Change |
 |------|--------|
-| `src-tauri/src/lib.rs` | Added `mod plugins` and registered 19 new commands |
+| `src-tauri/src/lib.rs` | Added `mod plugins` and registered 21 new commands |
 | `src-tauri/src/skills/registry.rs` | Added `commands_subdir` field to `ToolDefinition` |
 | `src-tauri/src/skills/fs_utils.rs` | Added `create_file_symlink` and `remove_file_or_symlink` |
 | `src/main.tsx` | Added `/plugins` and `/plugins/:pluginId` routes |
@@ -302,6 +302,8 @@ src/
 | `install_plugin_skill_to_all` | `plugin_id`, `skill_dir_name` | `()` | Symlink skill to all skills-capable tools |
 | `install_plugin_command` | `plugin_id`, `command_file`, `tool_id` | `()` | Symlink command to specific tool |
 | `install_plugin_command_to_all` | `plugin_id`, `command_file` | `()` | Symlink command to all commands-capable tools |
+| `install_all_plugin_skills_to_all_tools` | `plugin_id` | `()` | Symlink every plugin skill to every detected skills-capable tool in one batch |
+| `install_all_plugin_commands_to_all_tools` | `plugin_id` | `()` | Symlink every plugin command to every detected commands-capable tool in one batch |
 | `remove_plugin_skill` | `plugin_id`, `skill_dir_name`, `tool_id` | `()` | Remove skill symlink from tool |
 | `remove_plugin_command` | `plugin_id`, `command_file`, `tool_id` | `()` | Remove command symlink from tool |
 | `fetch_marketplace` | `url` | `MarketplaceInfo` | Clone/read marketplace and return plugin preview |
@@ -379,7 +381,7 @@ interface PluginCommandInfo {
 ## Notes
 
 - Git must be installed for GitHub plugin support; the app checks availability and shows a clear error if missing.
-- File symlinks on Windows require Developer Mode or administrator privileges, same as directory symlinks.
+- File symlinks on Windows require Developer Mode or administrator privileges, same as directory symlinks. If the normal install attempt hits the Windows symlink privilege error, the app automatically retries the plugin install action through a UAC prompt.
 - When removing a plugin, already-installed skills/commands remain in their target tools; only the registry entry and cloned repo are removed.
 - The `commands_subdir` field is currently only set for Claude Code; other tools can be extended as they add commands support.
 - Install status detection works by comparing canonical paths of symlinks in tool directories against the plugin source paths.

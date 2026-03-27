@@ -8,6 +8,7 @@ pub struct AiToolInfo {
     pub config_dir: String,
     pub capability: String,
     pub skills_dir: Option<String>,
+    pub commands_dir: Option<String>,
     pub config_files: Vec<ConfigFileInfo>,
     pub skill_count: u32,
     pub detected: bool,
@@ -18,6 +19,15 @@ pub struct ConfigFileInfo {
     pub name: String,
     pub path: String,
     pub format: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandInfo {
+    pub file_name: String,
+    pub command_name: String,
+    pub file_path: String,
+    pub is_symlink: bool,
+    pub symlink_target: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

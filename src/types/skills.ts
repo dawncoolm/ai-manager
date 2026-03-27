@@ -6,6 +6,7 @@ export interface AiTool {
   config_dir: string;
   capability: ToolCapability;
   skills_dir: string | null;
+  commands_dir: string | null;
   config_files: ConfigFile[];
   skill_count: number;
   detected: boolean;
@@ -15,6 +16,14 @@ export interface ConfigFile {
   name: string;
   path: string;
   format: "json" | "toml" | "markdown" | "yaml" | "unknown";
+}
+
+export interface Command {
+  file_name: string;
+  command_name: string;
+  file_path: string;
+  is_symlink: boolean;
+  symlink_target: string | null;
 }
 
 export interface Skill {

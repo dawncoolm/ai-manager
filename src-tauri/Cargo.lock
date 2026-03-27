@@ -21,6 +21,7 @@ dependencies = [
 name = "ai-manager"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "dirs",
  "serde",
  "serde_json",
@@ -28,6 +29,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-opener",
  "walkdir",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

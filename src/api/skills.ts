@@ -1,4 +1,11 @@
-import type { AiTool, Skill, SkillContent, EditorInfo, SkillGroup } from "../types/skills";
+import type {
+  AiTool,
+  Skill,
+  SkillContent,
+  EditorInfo,
+  SkillGroup,
+  Command,
+} from "../types/skills";
 import { tauriInvoke } from "./invoke";
 
 export async function scanAiTools(): Promise<AiTool[]> {
@@ -7,6 +14,10 @@ export async function scanAiTools(): Promise<AiTool[]> {
 
 export async function listSkills(toolId: string): Promise<Skill[]> {
   return tauriInvoke<Skill[]>("list_skills", { toolId });
+}
+
+export async function listCommands(toolId: string): Promise<Command[]> {
+  return tauriInvoke<Command[]>("list_commands", { toolId });
 }
 
 export async function listAllSkills(): Promise<SkillGroup[]> {
@@ -51,6 +62,10 @@ export async function readConfigFile(filePath: string): Promise<string> {
   return tauriInvoke<string>("read_config_file", { filePath });
 }
 
+export async function readCommandFile(filePath: string): Promise<string> {
+  return tauriInvoke<string>("read_command_file", { filePath });
+}
+
 export async function detectEditors(): Promise<EditorInfo[]> {
   return tauriInvoke<EditorInfo[]>("detect_editors");
 }
@@ -60,4 +75,11 @@ export async function openInEditor(
   editor: string
 ): Promise<void> {
   return tauriInvoke("open_in_editor", { filePath, editor });
+}
+
+export async function removeCommand(
+  toolId: string,
+  commandFile: string
+): Promise<void> {
+  return tauriInvoke("remove_command", { toolId, commandFile });
 }

@@ -55,13 +55,11 @@ export default function PluginDetailPage() {
   const isGithub = plugin.source.type === "GitHub";
 
   const handleBatchInstallSkills = async () => {
-    if (!pluginId || !contents) return;
+    if (!pluginId) return;
     setBatchLoading("skills");
     setBatchError(null);
     try {
-      for (const skill of contents.skills) {
-        await api.installPluginSkillToAll(pluginId, skill.dir_name);
-      }
+      await api.installAllPluginSkillsToAllTools(pluginId);
       await refetch();
     } catch (e) {
       setBatchError(String(e));
@@ -71,13 +69,11 @@ export default function PluginDetailPage() {
   };
 
   const handleBatchInstallCommands = async () => {
-    if (!pluginId || !contents) return;
+    if (!pluginId) return;
     setBatchLoading("commands");
     setBatchError(null);
     try {
-      for (const cmd of contents.commands) {
-        await api.installPluginCommandToAll(pluginId, cmd.file_name);
-      }
+      await api.installAllPluginCommandsToAllTools(pluginId);
       await refetch();
     } catch (e) {
       setBatchError(String(e));

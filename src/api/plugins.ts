@@ -77,6 +77,18 @@ export async function installPluginCommandToAll(
   });
 }
 
+export async function installAllPluginSkillsToAllTools(
+  pluginId: string
+): Promise<void> {
+  return tauriInvoke("install_all_plugin_skills_to_all_tools", { pluginId });
+}
+
+export async function installAllPluginCommandsToAllTools(
+  pluginId: string
+): Promise<void> {
+  return tauriInvoke("install_all_plugin_commands_to_all_tools", { pluginId });
+}
+
 export async function removePluginSkill(
   pluginId: string,
   skillDirName: string,

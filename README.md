@@ -46,7 +46,7 @@ Skills can also be stored in a shared hub at `~/.agents/skills/` and installed i
 
 ## Platform Notes
 
-- Windows symlink creation requires Developer Mode or administrator privileges.
+- Windows symlink creation still requires Developer Mode or administrator privileges. When Developer Mode is unavailable, the app now automatically retries install actions with a UAC elevation prompt.
 - Cursor config path varies by OS: `%APPDATA%\Cursor\` on Windows, `~/Library/Application Support/Cursor/` on macOS, `~/.config/Cursor/` on Linux.
 
 ## Project Docs

@@ -23,6 +23,13 @@ interface CommandsViewerProps {
   onRefresh: () => Promise<void>;
 }
 
+function matchesCommandSearch(command: Command, normalizedSearch: string) {
+  return (
+    command.command_name.toLowerCase().includes(normalizedSearch) ||
+    command.file_name.toLowerCase().includes(normalizedSearch)
+  );
+}
+
 export default function CommandsViewer({
   toolId,
   commands,
@@ -32,6 +39,7 @@ export default function CommandsViewer({
 }: CommandsViewerProps) {
   const [search, setSearch] = useState("");
   const [selectedPath, setSelectedPath] = useState("");
+  const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
   const [content, setContent] = useState("");
   const [contentLoading, setContentLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -44,27 +52,39 @@ export default function CommandsViewer({
 
   const normalizedSearch = search.toLowerCase();
   const filteredCommands = commands.filter(
-    (command) =>
-      command.command_name.toLowerCase().includes(normalizedSearch) ||
-      command.file_name.toLowerCase().includes(normalizedSearch)
+    (command) => matchesCommandSearch(command, normalizedSearch)
+  );
+  const selectedPathLookup = new Set(selectedPaths);
+  const selectedCommands = filteredCommands.filter((command) =>
+    selectedPathLookup.has(command.file_path)
   );
 
   useEffect(() => {
-    const visibleCommands = commands.filter(
-      (command) =>
-        command.command_name.toLowerCase().includes(normalizedSearch) ||
-        command.file_name.toLowerCase().includes(normalizedSearch)
+    const visibleCommandPaths = new Set(
+      filteredCommands.map((command) => command.file_path)
     );
 
-    if (visibleCommands.length === 0) {
+    setSelectedPaths((currentSelectedPaths) => {
+      const nextSelectedPaths = currentSelectedPaths.filter((path) =>
+        visibleCommandPaths.has(path)
+      );
+
+      return nextSelectedPaths.length === currentSelectedPaths.length
+        ? currentSelectedPaths
+        : nextSelectedPaths;
+    });
+  }, [commands, normalizedSearch]);
+
+  useEffect(() => {
+    if (filteredCommands.length === 0) {
       if (selectedPath) {
         setSelectedPath("");
       }
       return;
     }
 
-    if (!visibleCommands.some((command) => command.file_path === selectedPath)) {
-      setSelectedPath(visibleCommands[0].file_path);
+    if (!filteredCommands.some((command) => command.file_path === selectedPath)) {
+      setSelectedPath(filteredCommands[0].file_path);
     }
   }, [commands, normalizedSearch, selectedPath]);
 
@@ -123,28 +143,72 @@ export default function CommandsViewer({
     }
   };
 
-  const handleRemove = async () => {
-    if (!selectedCommand) {
+  const handleToggleSelectedPath = (commandPath: string) => {
+    setSelectedPaths((currentSelectedPaths) => {
+      if (currentSelectedPaths.includes(commandPath)) {
+        return currentSelectedPaths.filter((path) => path !== commandPath);
+      }
+
+      return [...currentSelectedPaths, commandPath];
+    });
+  };
+
+  const handleRemoveCommands = async (commandsToRemove: Command[]) => {
+    if (commandsToRemove.length === 0) {
       return;
     }
 
+    const removalErrors: string[] = [];
+
+    setRemoving(true);
+    setActionError(null);
+    try {
+      for (const command of commandsToRemove) {
+        try {
+          await api.removeCommand(toolId, command.file_name);
+        } catch (removeError) {
+          removalErrors.push(
+            `/${command.command_name}: ${String(removeError)}`
+          );
+        }
+      }
+
+      await onRefresh();
+
+      if (removalErrors.length > 0) {
+        setActionError(
+          `Failed to remove ${removalErrors.length} command(s): ${removalErrors.join("; ")}`
+        );
+      }
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  const handleRemoveSingleCommand = async (command: Command) => {
     const confirmed = confirm(
-      `Remove command "/${selectedCommand.command_name}" from this tool?`
+      `Remove command "/${command.command_name}" from this tool?`
     );
     if (!confirmed) {
       return;
     }
 
-    setRemoving(true);
-    setActionError(null);
-    try {
-      await api.removeCommand(toolId, selectedCommand.file_name);
-      await onRefresh();
-    } catch (removeError) {
-      setActionError(String(removeError));
-    } finally {
-      setRemoving(false);
+    await handleRemoveCommands([command]);
+  };
+
+  const handleRemoveSelected = async () => {
+    if (selectedCommands.length === 0) {
+      return;
     }
+
+    const confirmed = confirm(
+      `Remove ${selectedCommands.length} selected command(s) from this tool?`
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    await handleRemoveCommands(selectedCommands);
   };
 
   if (loading) {
@@ -205,7 +269,8 @@ export default function CommandsViewer({
                 </button>
                 <button
                   onClick={() => setDropdownOpen((current) => !current)}
-                  className="flex items-center rounded-r-md border-l border-indigo-500 bg-indigo-600 px-1.5 text-white hover:bg-indigo-700"
+                  disabled={!selectedCommand || opening || removing}
+                  className="flex items-center rounded-r-md border-l border-indigo-500 bg-indigo-600 px-1.5 text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
                   <ChevronDown className="h-3 w-3" />
                 </button>
@@ -234,12 +299,14 @@ export default function CommandsViewer({
           )}
 
           <button
-            onClick={handleRemove}
-            disabled={!selectedCommand || removing || opening}
+            onClick={handleRemoveSelected}
+            disabled={selectedCommands.length === 0 || removing || opening}
             className="flex items-center gap-1.5 rounded-md bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
           >
             <Trash2 className="h-3 w-3" />
-            {removing ? "Removing..." : "Remove"}
+            {removing
+              ? "Removing..."
+              : `Remove Selected (${selectedCommands.length})`}
           </button>
         </div>
       </div>
@@ -254,27 +321,59 @@ export default function CommandsViewer({
             <div className="space-y-2">
               {filteredCommands.map((command) => {
                 const selected = command.file_path === selectedCommand?.file_path;
+                const checked = selectedPathLookup.has(command.file_path);
                 return (
-                  <button
+                  <div
                     key={command.file_path}
-                    onClick={() => setSelectedPath(command.file_path)}
-                    className={`w-full rounded-lg border px-3 py-3 text-left transition-colors ${
+                    className={`flex items-center gap-3 rounded-lg border px-3 py-3 transition-colors ${
                       selected
                         ? "border-indigo-200 bg-indigo-50"
                         : "border-transparent bg-gray-50 hover:border-gray-200 hover:bg-white"
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <Terminal className="h-3.5 w-3.5 text-indigo-500" />
-                      <span className="truncate text-sm font-medium text-gray-900">
-                        /{command.command_name}
-                      </span>
-                      {command.is_symlink && <Badge variant="muted">Symlink</Badge>}
-                    </div>
-                    <p className="mt-1 truncate text-xs text-gray-400">
-                      {command.file_name}
-                    </p>
-                  </button>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={removing || opening}
+                      onClick={(event) => event.stopPropagation()}
+                      onChange={() => handleToggleSelectedPath(command.file_path)}
+                      aria-label={`Select /${command.command_name}`}
+                      className="h-4 w-4 flex-shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPath(command.file_path)}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Terminal className="h-3.5 w-3.5 text-indigo-500" />
+                        <span className="truncate text-sm font-medium text-gray-900">
+                          /{command.command_name}
+                        </span>
+                        {command.is_symlink && (
+                          <Badge variant="muted">Symlink</Badge>
+                        )}
+                      </div>
+                      <p className="mt-1 truncate text-xs text-gray-400">
+                        {command.file_name}
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleRemoveSingleCommand(command);
+                      }}
+                      disabled={removing || opening}
+                      title={`Remove /${command.command_name}`}
+                      aria-label={`Remove /${command.command_name}`}
+                      className="flex-shrink-0 rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 );
               })}
             </div>

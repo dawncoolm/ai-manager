@@ -3,6 +3,7 @@ import {
   Home,
   BrainCircuit,
   Puzzle,
+  Plug,
   Settings,
 } from "lucide-react";
 
@@ -10,6 +11,7 @@ const modules = [
   { id: "home", name: "Home", icon: Home, path: "/" },
   { id: "skills", name: "AI Skills", icon: BrainCircuit, path: "/skills" },
   { id: "plugins", name: "Plugins", icon: Puzzle, path: "/plugins" },
+  { id: "mcp", name: "MCP Servers", icon: Plug, path: "/mcp" },
 ];
 
 const skillsSubNav = [
@@ -26,6 +28,7 @@ export default function Sidebar() {
   const location = useLocation();
   const inSkillsModule = location.pathname.startsWith("/skills");
   const inPluginsModule = location.pathname.startsWith("/plugins");
+  const inMcpModule = location.pathname.startsWith("/mcp");
   const inSettingsModule = location.pathname.startsWith("/settings");
 
   return (
@@ -47,7 +50,7 @@ export default function Sidebar() {
               end={mod.path === "/"}
               className={({ isActive }) =>
                 `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive || (mod.id === "skills" && inSkillsModule) || (mod.id === "plugins" && inPluginsModule)
+                  isActive || (mod.id === "skills" && inSkillsModule) || (mod.id === "plugins" && inPluginsModule) || (mod.id === "mcp" && inMcpModule)
                     ? "bg-indigo-50 text-indigo-700"
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`

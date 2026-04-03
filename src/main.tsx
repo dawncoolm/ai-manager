@@ -10,6 +10,8 @@ import HubPage from "./pages/skills/HubPage";
 import BySkillPage from "./pages/skills/BySkillPage";
 import PluginsPage from "./pages/plugins/PluginsPage";
 import PluginDetailPage from "./pages/plugins/PluginDetailPage";
+import McpDashboard from "./pages/mcp/McpDashboard";
+import McpToolDetailPage from "./pages/mcp/McpToolDetailPage";
 import Settings from "./pages/Settings";
 import CacheManagement from "./pages/CacheManagement";
 import "./App.css";
@@ -35,6 +37,8 @@ const router = createHashRouter([
       { path: "skills/hub/:skillName", element: <SkillDetailPage /> },
       { path: "plugins", element: <PluginsPage /> },
       { path: "plugins/:pluginId", element: <PluginDetailPage /> },
+      { path: "mcp", element: <McpDashboard /> },
+      { path: "mcp/:toolId", element: <McpToolDetailPage /> },
       { path: "settings", element: <Settings /> },
       { path: "settings/cache", element: <CacheManagement /> },
     ],

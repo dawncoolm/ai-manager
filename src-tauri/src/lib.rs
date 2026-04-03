@@ -1,4 +1,5 @@
 mod cache;
+mod mcp;
 mod plugins;
 mod skills;
 
@@ -49,6 +50,11 @@ pub fn run() {
             plugins::marketplace_commands::list_marketplaces,
             plugins::marketplace_commands::update_marketplace,
             plugins::marketplace_commands::remove_marketplace,
+            mcp::commands::scan_mcp_tools,
+            mcp::commands::read_mcp_servers,
+            mcp::commands::add_mcp_server,
+            mcp::commands::remove_mcp_server,
+            mcp::commands::update_mcp_server,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

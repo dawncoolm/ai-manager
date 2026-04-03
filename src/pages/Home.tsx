@@ -27,7 +27,7 @@ const features = [
     icon: Plug,
     path: "/mcp",
     color: "bg-emerald-50 text-emerald-600",
-    ready: false,
+    ready: true,
   },
   {
     id: "rules",

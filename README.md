@@ -20,13 +20,16 @@ A cross-platform desktop application for managing AI coding tool skills. Browse,
 
 ```bash
 # Install dependencies
-npm install
+bun install
 
-# Start development server
-npm run tauri dev
+# Start desktop development mode
+bun start
+
+# npm also works
+npm start
 
 # Build for production
-npm run tauri build
+bun run tauri build
 ```
 
 ## Supported AI Tools

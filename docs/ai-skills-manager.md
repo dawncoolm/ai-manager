@@ -285,7 +285,10 @@ interface SkillContent {
 
 ```bash
 # Development mode
-bun run tauri dev
+bun start
+
+# npm also works
+npm start
 
 # Production build
 bun run tauri build
